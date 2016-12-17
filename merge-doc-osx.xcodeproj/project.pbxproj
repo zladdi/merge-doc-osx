@@ -25,6 +25,7 @@
 /* Begin PBXFileReference section */
 		4D417AF01E0440010097C6C6 /* merge-doc-osx */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "merge-doc-osx"; sourceTree = BUILT_PRODUCTS_DIR; };
 		4D417AF31E0440010097C6C6 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		4D9659E91E04456D00A0BA03 /* Word.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Word.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -57,6 +58,7 @@
 		4D417AF21E0440010097C6C6 /* merge-doc-osx */ = {
 			isa = PBXGroup;
 			children = (
+				4D9659E91E04456D00A0BA03 /* Word.h */,
 				4D417AF31E0440010097C6C6 /* main.m */,
 			);
 			path = "merge-doc-osx";
@@ -246,6 +248,7 @@
 				4D417AF91E0440010097C6C6 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
