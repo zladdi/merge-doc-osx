@@ -45,7 +45,7 @@ NSString* executeCompare(WordApplication *word, NSString *sBaseDoc, NSString *sO
         // The temporary file handling part was inspired by: http://nshipster.com/nstemporarydirectory/
         NSURL *groupContainerURL = [[NSFileManager defaultManager] containerURLForSecurityApplicationGroupIdentifier:@"UBF8T346G9.Office"];
         
-        sTargetDoc = [NSString stringWithFormat:@"%@_%@", [[NSProcessInfo processInfo] globallyUniqueString], [sOtherDoc lastPathComponent]];
+        sTargetDoc = [NSString stringWithFormat:@"%@_%@", [sOtherDoc lastPathComponent], [[NSProcessInfo processInfo] globallyUniqueString]];
         sTargetDoc = [[groupContainerURL URLByAppendingPathComponent:sTargetDoc] path];
                 
         [[word activeDocument] saveAsFileName:sTargetDoc fileFormat:[baseDoc saveFormat] lockComments:NO password:nil addToRecentFiles:NO writePassword:nil readOnlyRecommended:NO embedTruetypeFonts:[baseDoc embedTrueTypeFonts]  saveNativePictureFormat:NO saveFormsData:NO textEncoding:WordMsoEncodingEncodingUTF8 insertLineBreaks:NO allowSubstitutions:NO lineEndingType:WordWdLineEndingTypeLineEndingCrLf HTMLDisplayOnlyOutput:NO maintainCompatibility:YES];
@@ -213,7 +213,7 @@ int main(int argc, const char * argv[]) {
             }
             @catch(NSException * e)
             {
-                printf("Error running merge (merged: %s, theirs: %s, mine: %s, base: %s\n", [sMergedDoc UTF8String], [sTheirDoc UTF8String], [sMyDoc UTF8String], [sBaseDoc UTF8String]);
+                printf("Error running merge (merged: %s, theirs: %s, mine: %s, base: %s\n): %s", [sMergedDoc UTF8String], [sTheirDoc UTF8String], [sMyDoc UTF8String], [sBaseDoc UTF8String], [[e reason] UTF8String]);
                 return 1;
             }
         }
