@@ -18,24 +18,56 @@
 #import <Foundation/Foundation.h>
 #import "Word.h"
 
+NSString* executeCompare(WordApplication *word, NSString *sBaseDoc, NSString *sOtherDoc, NSString *sOtherDocAuthor)
+{
+    WordDocument *baseDoc, *otherDoc;
+    NSString *sTargetDoc;
+    
+    uint vOffice2013 = 15;
+    WordWdCompareTarget wdCompareTarget = ([[word version] intValue] < vOffice2013 ? WordWdCompareTargetCompareTargetSelected : WordWdCompareTargetCompareTargetNew);
+    
+    // No 'activate' method -> comment code
+    //[baseDoc activate]; //required otherwise it compares the wrong docs !!!
+    // We cannot activate the document, so we open it, which should activate it
+    baseDoc = [word open:nil fileName:sBaseDoc confirmConversions:YES readOnly:NO addToRecentFiles:NO repair:NO showingRepairs:NO passwordDocument:nil passwordTemplate:nil revert:NO writePassword:nil writePasswordTemplate:nil fileConverter:WordWdOpenFormatOpenFormatAuto];
+    
+    [baseDoc comparePath:sOtherDoc authorName:sOtherDocAuthor target:wdCompareTarget detectFormatChanges:YES ignoreAllComparisonWarnings:YES addToRecentFiles:NO];
+    
+    if ([[word version] intValue] < vOffice2013)
+    {
+        sTargetDoc = sOtherDoc;
+    }
+    else
+    {
+        // Due to sandboxing, we are going to save the new document to a temporary location that MS word has access to
+        // This approach was inspired by: http://www.rondebruin.nl/mac/mac034.htm
+        // Group container URL: https://developer.apple.com/library/content/documentation/Security/Conceptual/AppSandboxDesignGuide/AppSandboxInDepth/AppSandboxInDepth.html
+        // The temporary file handling part was inspired by: http://nshipster.com/nstemporarydirectory/
+        NSURL *groupContainerURL = [[NSFileManager defaultManager] containerURLForSecurityApplicationGroupIdentifier:@"UBF8T346G9.Office"];
+        
+        sTargetDoc = [NSString stringWithFormat:@"%@_%@", [[NSProcessInfo processInfo] globallyUniqueString], [sOtherDoc lastPathComponent]];
+        sTargetDoc = [[groupContainerURL URLByAppendingPathComponent:sTargetDoc] path];
+                
+        [[word activeDocument] saveAsFileName:sTargetDoc fileFormat:[baseDoc saveFormat] lockComments:NO password:nil addToRecentFiles:NO writePassword:nil readOnlyRecommended:NO embedTruetypeFonts:[baseDoc embedTrueTypeFonts]  saveNativePictureFormat:NO saveFormsData:NO textEncoding:WordMsoEncodingEncodingUTF8 insertLineBreaks:NO allowSubstitutions:NO lineEndingType:WordWdLineEndingTypeLineEndingCrLf HTMLDisplayOnlyOutput:NO maintainCompatibility:YES];
+        
+        // Close original document
+        otherDoc = [word open:nil fileName:sOtherDoc confirmConversions:YES readOnly:NO addToRecentFiles:NO repair:NO showingRepairs:NO passwordDocument:nil passwordTemplate:nil revert:NO writePassword:nil writePasswordTemplate:nil fileConverter:WordWdOpenFormatOpenFormatAuto];
+        [otherDoc closeSaving:WordSaveOptionsNo savingIn:nil];
+    }
+
+    return sTargetDoc;
+}
+
 void executeMerge(WordApplication *word, WordDocument *baseDoc, NSString *sBaseDoc, NSString *sTheirDoc, NSString *sMyDoc)
 {
-    WordDocument *myDoc, *theirDoc;
+    WordDocument *theirDoc, *myDocAfterCompare;
+    NSString *sTheirDocAfterCompare, *sMyDocAfterCompare;
+    
     theirDoc = baseDoc;
-    
-    // No 'activate' method -> comment code
-    //[baseDoc activate]; //required otherwise it compares the wrong docs !!!
-    // We cannot activate the document, so we open it, which should activate it
-    baseDoc = [word open:nil fileName:sBaseDoc confirmConversions:YES readOnly:NO addToRecentFiles:NO repair:NO showingRepairs:NO passwordDocument:nil passwordTemplate:nil revert:NO writePassword:nil writePasswordTemplate:nil fileConverter:WordWdOpenFormatOpenFormatAuto];
-    
-    [baseDoc comparePath:sTheirDoc authorName:@"theirs" target:WordWdCompareTargetCompareTargetSelected detectFormatChanges:YES ignoreAllComparisonWarnings:YES addToRecentFiles:NO];
 
-    // No 'activate' method -> comment code
-    //[baseDoc activate]; //required otherwise it compares the wrong docs !!!
-    // We cannot activate the document, so we open it, which should activate it
-    baseDoc = [word open:nil fileName:sBaseDoc confirmConversions:YES readOnly:NO addToRecentFiles:NO repair:NO showingRepairs:NO passwordDocument:nil passwordTemplate:nil revert:NO writePassword:nil writePasswordTemplate:nil fileConverter:WordWdOpenFormatOpenFormatAuto];
-    
-    [baseDoc comparePath:sMyDoc authorName:@"mine" target:WordWdCompareTargetCompareTargetSelected detectFormatChanges:YES ignoreAllComparisonWarnings:YES addToRecentFiles:NO];
+    sTheirDocAfterCompare = executeCompare(word, sBaseDoc, sTheirDoc, @"theirs");
+
+    sMyDocAfterCompare = executeCompare(word, sBaseDoc, sMyDoc, @"mine");
     
     //[theirDoc saveIn:nil as:nil];
     //[myDoc saveIn:nil as:nil];
@@ -43,9 +75,21 @@ void executeMerge(WordApplication *word, WordDocument *baseDoc, NSString *sBaseD
     // No 'activate' method -> comment code
     //[myDoc activate]; //required? just in case
     // We cannot activate the document, so we open it, which should activate it
-    myDoc = [word open:nil fileName:sMyDoc confirmConversions:YES readOnly:NO addToRecentFiles:NO repair:NO showingRepairs:NO passwordDocument:nil passwordTemplate:nil revert:NO writePassword:nil writePasswordTemplate:nil fileConverter:WordWdOpenFormatOpenFormatAuto];
+    myDocAfterCompare = [word open:nil fileName:sMyDocAfterCompare confirmConversions:YES readOnly:NO addToRecentFiles:NO repair:NO showingRepairs:NO passwordDocument:nil passwordTemplate:nil revert:NO writePassword:nil writePasswordTemplate:nil fileConverter:WordWdOpenFormatOpenFormatAuto];
 
-    [myDoc mergeFileName:sTheirDoc];
+    [myDocAfterCompare mergeFileName:sTheirDocAfterCompare];
+    
+    // Clean-up (this should work, even if the docs are still opened in Word)
+    if (![sTheirDoc isEqualToString:sTheirDocAfterCompare])
+    {
+        [[NSFileManager defaultManager] removeItemAtPath:sTheirDocAfterCompare error:nil];
+    }
+
+    if (![sMyDoc isEqualToString:sMyDocAfterCompare])
+    {
+        [[NSFileManager defaultManager] removeItemAtPath:sMyDocAfterCompare error:nil];
+    }
+    
     // Built-in three-way merge does not work that nicely
     //[myDoc threeWayMergeLocalDocument:myDoc serverDocument:theirDoc baseDocument:baseDoc favorSource:NO];
 }
