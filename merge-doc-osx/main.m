@@ -117,7 +117,7 @@ int main(int argc, const char * argv[]) {
             if (num < 4)
             {
                 NSString *basename = @(argv[0]); //[NSString stringWithUTF8String:argv[0]];
-                printf("Usage: %s merged.doc theirs.doc mine.doc base.doc\n", [[[basename lastPathComponent] stringByDeletingPathExtension] UTF8String]);
+                printf("Usage: %s <absolute-path-to-merged.doc> <absolute-path-to-theirs.doc> <absolute-path-to-mine.doc> <absolute-path-to-base.doc>\n", [[[basename lastPathComponent] stringByDeletingPathExtension] UTF8String]);
                 return 1;
             }
             
@@ -175,7 +175,7 @@ int main(int argc, const char * argv[]) {
                 }
                 else
                 {
-                    //2010 - handle slightly differently as the basic merge isn't that good
+                    //2010 and later - handle slightly differently as the basic merge isn't that good
                     //note this is designed specifically for svn 3 way merges, during the commit conflict resolution process
                     executeMerge(word, baseDoc, sBaseDoc, sTheirDoc, sMyDoc);
                 }
